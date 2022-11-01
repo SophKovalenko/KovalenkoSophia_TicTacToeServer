@@ -68,6 +68,11 @@ public class NetworkedServer : MonoBehaviour
     private void ProcessRecievedMsg(string msg, int id)
     {
         Debug.Log("msg recieved = " + msg + ".  connection id = " + id);
+
+        //Create a reference to this player & their connection id in this program
+        PlayerPrefs.SetString("" + msg + id, msg + "," + id);
     }
+
+
 
 }
