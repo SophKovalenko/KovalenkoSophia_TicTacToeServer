@@ -19,6 +19,7 @@ public class NetworkedServer : MonoBehaviour
     string savedPassword;
     int savedConnectionId;
     int connectionIdOfAccount;
+    bool loggedIntoSystem;
 
     public static string loginFileNames = "";
 
@@ -102,8 +103,6 @@ public class NetworkedServer : MonoBehaviour
             using (StreamWriter sw = new StreamWriter(userName + ".txt"))
             {
                 sw.WriteLine(userName + "," + passWord + "," + connectionIdOfAccount + ",");
-                ///sw.WriteLine(passWord + ",");
-                //sw.WriteLine(connectionIdOfAccount + ",");
             }
 
             using (StreamWriter sw = new StreamWriter("savedLogins.txt"))
@@ -130,13 +129,15 @@ public class NetworkedServer : MonoBehaviour
 
                     if (passWord == savedPassword)
                     {
-                        msg = "You have successfully logged in as " + userName + " with connection id: " + savedConnectionId;
+                        loggedIntoSystem = true;
+                        msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
                         SendMessageToClient(msg, savedConnectionId);
                     }
 
                     if (passWord != savedPassword)
                     {
-                        msg = "You have entered the incorrect password for " + userName + " with connection id: " + savedConnectionId;
+                        loggedIntoSystem = false;
+                        msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
                         SendMessageToClient(msg, savedConnectionId);
                     }
                 }
