@@ -4,7 +4,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 using System.IO;
-using UnityEngine.UI;
+using System;
 
 public class NetworkedServer : MonoBehaviour
 {
@@ -13,6 +13,17 @@ public class NetworkedServer : MonoBehaviour
     int unreliableChannelID;
     int hostID;
     int socketPort = 5491;
+
+    string userName;
+    string passWord;
+    string savedPassword;
+    int savedConnectionId;
+    int connectionIdOfAccount;
+
+    public static string loginFileNames = "";
+
+    //Create a new list for usernames/ passwords
+    static List<string> fileNames = new List<string>();
 
     // Start is called before the first frame update
     void Start()
@@ -24,12 +35,23 @@ public class NetworkedServer : MonoBehaviour
         HostTopology topology = new HostTopology(config, maxConnections);
         hostID = NetworkTransport.AddHost(topology, socketPort, null);
 
+        string line = "";
+
+        using (StreamReader sr = new StreamReader("savedLogins.txt"))
+        {
+            while ((line = sr.ReadLine()) != null)
+            {
+                fileNames.Add(line);
+
+            }
+        }
+
+
     }
 
     // Update is called once per frame
     void Update()
     {
-
         int recHostID;
         int recConnectionID;
         int recChannelID;
@@ -55,7 +77,6 @@ public class NetworkedServer : MonoBehaviour
                 Debug.Log("Disconnection, " + recConnectionID);
                 break;
         }
-
     }
 
     public void SendMessageToClient(string msg, int id)
@@ -69,10 +90,58 @@ public class NetworkedServer : MonoBehaviour
     {
         Debug.Log("msg recieved = " + msg + ".  connection id = " + id);
 
-        //Create a reference to this player & their connection id in this program
-        PlayerPrefs.SetString("" + msg + id, msg + "," + id);
+        string[] accountInfo = msg.Split(',');
+        userName = accountInfo[0];
+        passWord = accountInfo[1];
+        connectionIdOfAccount = id;
+
+        if (fileNames.Contains(userName) == false)
+        {
+            fileNames.Add(userName);
+
+            using (StreamWriter sw = new StreamWriter(userName + ".txt"))
+            {
+                sw.WriteLine(userName + "," + passWord + "," + connectionIdOfAccount + ",");
+                ///sw.WriteLine(passWord + ",");
+                //sw.WriteLine(connectionIdOfAccount + ",");
+            }
+
+            using (StreamWriter sw = new StreamWriter("savedLogins.txt"))
+            {
+                foreach (var fileName in fileNames)
+                {
+                    sw.WriteLine(fileName);
+                }
+            }
+        }
+        else if (fileNames.Contains(userName) == true)
+        {
+            string line = "";
+
+            using (StreamReader sr = new StreamReader(userName + ".txt"))
+            {
+                while ((line = sr.ReadLine()) != null)
+                {
+                    Console.WriteLine(line);
+                    string[] savedInfo = line.Split(',');
+
+                    savedPassword = savedInfo[1];
+                    savedConnectionId = int.Parse(savedInfo[2]);
+
+                    if (passWord == savedPassword)
+                    {
+                        msg = "You have successfully logged in as " + userName + " with connection id: " + savedConnectionId;
+                        SendMessageToClient(msg, savedConnectionId);
+                    }
+
+                    if (passWord != savedPassword)
+                    {
+                        msg = "You have entered the incorrect password for " + userName + " with connection id: " + savedConnectionId;
+                        SendMessageToClient(msg, savedConnectionId);
+                    }
+                }
+            }
+
+        }
     }
-
-
-
 }
