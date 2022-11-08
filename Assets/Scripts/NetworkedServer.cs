@@ -20,11 +20,21 @@ public class NetworkedServer : MonoBehaviour
     int savedConnectionId;
     int connectionIdOfAccount;
     bool loggedIntoSystem;
+    bool accountAuthenticated = false;
 
+    string gameRoomName;
+
+    //Used for storing the login info of players into text docs
     public static string loginFileNames = "";
 
     //Create a new list for usernames/ passwords
     static List<string> fileNames = new List<string>();
+
+    //Used for storing the saved game room info 
+    public static string gameRoomNames = "";
+
+    //Create a new list for usernames/ passwords
+    static List<string> gameRoomFileNames = new List<string>();
 
     // Start is called before the first frame update
     void Start()
@@ -44,6 +54,14 @@ public class NetworkedServer : MonoBehaviour
             {
                 fileNames.Add(line);
 
+            }
+        }
+
+        using (StreamReader sr = new StreamReader("existingGameRooms.txt"))
+        {
+            while ((line = sr.ReadLine()) != null)
+            {
+                gameRoomFileNames.Add(line);
             }
         }
 
@@ -91,58 +109,87 @@ public class NetworkedServer : MonoBehaviour
     {
         Debug.Log("msg recieved = " + msg + ".  connection id = " + id);
 
-        string[] accountInfo = msg.Split(',');
-        userName = accountInfo[0];
-        passWord = accountInfo[1];
-        connectionIdOfAccount = id;
-
-        if (fileNames.Contains(userName) == false)
+        //Now recieving info to autenticate account
+        if (accountAuthenticated == false)
         {
-            fileNames.Add(userName);
+            string[] accountInfo = msg.Split(',');
+            userName = accountInfo[0];
+            passWord = accountInfo[1];
+            connectionIdOfAccount = id;
 
-            using (StreamWriter sw = new StreamWriter(userName + ".txt"))
+            if (fileNames.Contains(userName) == false)
             {
-                sw.WriteLine(userName + "," + passWord + "," + connectionIdOfAccount + ",");
-            }
+                fileNames.Add(userName);
 
-            using (StreamWriter sw = new StreamWriter("savedLogins.txt"))
-            {
-                foreach (var fileName in fileNames)
+                using (StreamWriter sw = new StreamWriter(userName + ".txt"))
                 {
-                    sw.WriteLine(fileName);
+                    sw.WriteLine(userName + "," + passWord + "," + connectionIdOfAccount + ",");
                 }
+
+                using (StreamWriter sw = new StreamWriter("savedLogins.txt"))
+                {
+                    foreach (var fileName in fileNames)
+                    {
+                        sw.WriteLine(fileName);
+                    }
+                }
+            }
+            else if (fileNames.Contains(userName) == true)
+            {
+                string line = "";
+
+                using (StreamReader sr = new StreamReader(userName + ".txt"))
+                {
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        Console.WriteLine(line);
+                        string[] savedInfo = line.Split(',');
+
+                        savedPassword = savedInfo[1];
+                        savedConnectionId = int.Parse(savedInfo[2]);
+
+                        if (passWord == savedPassword)
+                        {
+                            loggedIntoSystem = true;
+                            msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
+                            SendMessageToClient(msg, savedConnectionId);
+                            accountAuthenticated = true;
+                            break;
+                        }
+
+                        if (passWord != savedPassword)
+                        {
+                            loggedIntoSystem = false;
+                            msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
+                            SendMessageToClient(msg, savedConnectionId);
+                        }
+                    }
+                }
+
             }
         }
-        else if (fileNames.Contains(userName) == true)
+        //Now recieving info to create game room
+        else if (accountAuthenticated == true)
         {
-            string line = "";
+            gameRoomName = msg;
 
-            using (StreamReader sr = new StreamReader(userName + ".txt"))
+            if (gameRoomFileNames.Contains(gameRoomName) == false)
             {
-                while ((line = sr.ReadLine()) != null)
+                gameRoomFileNames.Add(gameRoomName);
+
+                using (StreamWriter sw = new StreamWriter(gameRoomName + ".txt"))
                 {
-                    Console.WriteLine(line);
-                    string[] savedInfo = line.Split(',');
+                    sw.WriteLine(gameRoomName);
+                }
 
-                    savedPassword = savedInfo[1];
-                    savedConnectionId = int.Parse(savedInfo[2]);
-
-                    if (passWord == savedPassword)
+                using (StreamWriter sw = new StreamWriter("existingGameRooms.txt"))
+                {
+                    foreach (var gameRoomFileName in gameRoomFileNames)
                     {
-                        loggedIntoSystem = true;
-                        msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
-                        SendMessageToClient(msg, savedConnectionId);
-                    }
-
-                    if (passWord != savedPassword)
-                    {
-                        loggedIntoSystem = false;
-                        msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
-                        SendMessageToClient(msg, savedConnectionId);
+                        sw.WriteLine(gameRoomFileName);
                     }
                 }
             }
-
         }
     }
 }
