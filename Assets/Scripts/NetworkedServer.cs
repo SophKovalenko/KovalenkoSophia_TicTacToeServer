@@ -23,6 +23,15 @@ public class NetworkedServer : MonoBehaviour
     bool accountAuthenticated = false;
 
     string gameRoomName;
+    bool player1Connected = false;
+    int player1ConnectionID;
+    bool player2Connected = false;
+    int player2ConnectionID;
+
+    string recievedMsgToSendToOtherClient;
+    bool twoClientsConnected = false;
+    int idOfSender;
+    int idOfReciever;
 
     //Used for storing the login info of players into text docs
     public static string loginFileNames = "";
@@ -64,8 +73,6 @@ public class NetworkedServer : MonoBehaviour
                 gameRoomFileNames.Add(line);
             }
         }
-
-
     }
 
     // Update is called once per frame
@@ -171,6 +178,21 @@ public class NetworkedServer : MonoBehaviour
         //Now recieving info to create game room
         else if (accountAuthenticated == true)
         {
+            if (player1Connected == false && player2Connected == false)
+            {
+                player1Connected = true;
+                player1ConnectionID = id;
+                Debug.Log(player1ConnectionID);
+            }
+
+            if (player1Connected == true && player2Connected == false)
+            {
+                player2Connected = true;
+                player2ConnectionID = id;
+                twoClientsConnected = true;
+                Debug.Log(player2ConnectionID);
+            }
+
             gameRoomName = msg;
 
             if (gameRoomFileNames.Contains(gameRoomName) == false)
@@ -180,6 +202,19 @@ public class NetworkedServer : MonoBehaviour
                 using (StreamWriter sw = new StreamWriter(gameRoomName + ".txt"))
                 {
                     sw.WriteLine(gameRoomName);
+
+                    if (player1Connected == true)
+                    { sw.WriteLine("1"); 
+                      sw.WriteLine(savedConnectionId); 
+                    }
+
+                    if (player2Connected == true)
+                    {
+                        sw.WriteLine("true");
+                        sw.WriteLine(savedConnectionId); 
+                    
+                    }
+                
                 }
 
                 using (StreamWriter sw = new StreamWriter("existingGameRooms.txt"))
@@ -190,6 +225,43 @@ public class NetworkedServer : MonoBehaviour
                     }
                 }
             }
+            else if (fileNames.Contains(gameRoomName) == true)
+            {
+                string line = "";
+
+                using (StreamReader sr = new StreamReader(gameRoomName + ".txt"))
+                {
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        Console.WriteLine(line);
+                        string[] savedInfo = line.Split(',');
+
+                        //Pull info we need from the client
+                        //savedPassword = savedInfo[1];
+                        //savedConnectionId = int.Parse(savedInfo[2]);
+
+                    }
+                }
+
+
+
+            }
+
+            if (twoClientsConnected == true)
+            {
+                recievedMsgToSendToOtherClient = msg;
+                idOfSender = id;
+            }
         }
+    }
+
+    private void SendMessageBetweenClients()
+    {
+        if (idOfSender == player1ConnectionID)
+        { SendMessageToClient(recievedMsgToSendToOtherClient, player2ConnectionID); }
+
+        if (idOfSender == player2ConnectionID)
+        { SendMessageToClient(recievedMsgToSendToOtherClient, player1ConnectionID); }
+
     }
 }

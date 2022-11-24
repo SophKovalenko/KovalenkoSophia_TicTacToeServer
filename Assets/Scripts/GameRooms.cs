@@ -1,13 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
-public class GameRooms : MonoBehaviour
+[SerializeField]
+public struct GameRoom
 {
-    public string GameRoomId { get; set; }
-
-    public GameRooms(string gameRoomId)
-    {
-        GameRoomId = gameRoomId;
-    }
+    public string name;
+    public int numPlayers;
+    public int connectionIdPlayer1;
+    public int connectionIdPlayer2;
+    public bool player1Connected;
+    public bool player2Connected;
 }
