@@ -21,6 +21,7 @@ public class NetworkedServer : MonoBehaviour
     int connectionIdOfAccount;
     bool loggedIntoSystem;
     bool accountAuthenticated = false;
+    string msgSignifier;
 
     string gameRoomName;
     bool player1Connected = false;
@@ -42,8 +43,11 @@ public class NetworkedServer : MonoBehaviour
     //Used for storing the saved game room info 
     public static string gameRoomNames = "";
 
-    //Create a new list for usernames/ passwords
+    //Create a new list for gameRooms
     static List<string> gameRoomFileNames = new List<string>();
+
+    //Create a new list for connectedPlayers
+    static List<int> connectedPlayerIDs = new List<int>();
 
     // Start is called before the first frame update
     void Start()
@@ -116,84 +120,131 @@ public class NetworkedServer : MonoBehaviour
     {
         Debug.Log("msg recieved = " + msg + ".  connection id = " + id);
 
-        //Now recieving info to autenticate account
-        if (accountAuthenticated == false)
+        string[] msgFromServer = msg.Split(',');
+        msgSignifier = msgFromServer[0];
+
+        switch (msgSignifier)
         {
-            string[] accountInfo = msg.Split(',');
-            userName = accountInfo[0];
-            passWord = accountInfo[1];
-            connectionIdOfAccount = id;
+            case "CreateAccount":
+                CreateNewAccount(msg, id);
+                break;
+            case "Login":
+                Login(msg, id);
+                break;
+            case "JoinRoom":
+                break;
+            case "LeaveRoom":
+                break;
+            case "SendMessage":
+                SendMessageBetweenClients(msg, id);
+                break;
+        }
 
-            if (fileNames.Contains(userName) == false)
+    }
+
+    private void CreateNewAccount(string msg, int id)
+    {
+        //Now recieving info to autenticate account
+        string[] accountInfo = msg.Split(',');
+        userName = accountInfo[1];
+        passWord = accountInfo[2];
+        connectionIdOfAccount = id;
+
+        if (fileNames.Contains(userName) == false)
+        {
+            fileNames.Add(userName);
+
+            using (StreamWriter sw = new StreamWriter(userName + ".txt"))
             {
-                fileNames.Add(userName);
+                sw.WriteLine(userName + "," + passWord + "," + connectionIdOfAccount + ",");
+            }
 
-                using (StreamWriter sw = new StreamWriter(userName + ".txt"))
+            using (StreamWriter sw = new StreamWriter("savedLogins.txt"))
+            {
+                foreach (var fileName in fileNames)
                 {
-                    sw.WriteLine(userName + "," + passWord + "," + connectionIdOfAccount + ",");
-                }
-
-                using (StreamWriter sw = new StreamWriter("savedLogins.txt"))
-                {
-                    foreach (var fileName in fileNames)
-                    {
-                        sw.WriteLine(fileName);
-                    }
+                    sw.WriteLine(fileName);
                 }
             }
-            else if (fileNames.Contains(userName) == true)
+        }
+        else if (fileNames.Contains(userName) == true)
+        {
+            Debug.Log("Username already taken, please choose another");
+
+        }
+    }
+
+    private void Login(string msg, int id)
+    {
+        //Now recieving info to autenticate account
+        string[] accountInfo = msg.Split(',');
+        userName = accountInfo[1];
+        passWord = accountInfo[2];
+        connectionIdOfAccount = id;
+
+        if (fileNames.Contains(userName) == true)
+        {
+            string line = "";
+
+            using (StreamReader sr = new StreamReader(userName + ".txt"))
             {
-                string line = "";
-
-                using (StreamReader sr = new StreamReader(userName + ".txt"))
+                while ((line = sr.ReadLine()) != null)
                 {
-                    while ((line = sr.ReadLine()) != null)
+                    Console.WriteLine(line);
+                    string[] savedInfo = line.Split(',');
+
+                    savedPassword = savedInfo[1];
+                    Debug.Log(savedPassword);
+                    savedConnectionId = int.Parse(savedInfo[2]);
+
+                    if (passWord == savedPassword)
                     {
-                        Console.WriteLine(line);
-                        string[] savedInfo = line.Split(',');
-
-                        savedPassword = savedInfo[1];
-                        savedConnectionId = int.Parse(savedInfo[2]);
-
-                        if (passWord == savedPassword)
+                        if (player1Connected == false && player2Connected == false)
                         {
                             loggedIntoSystem = true;
                             msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
                             SendMessageToClient(msg, savedConnectionId);
-                            accountAuthenticated = true;
-                            break;
+                            player1Connected = true;
+                            player1ConnectionID = id;
+                            connectedPlayerIDs.Add(player1ConnectionID);
+                            Debug.Log("One player is connected");
                         }
-
-                        if (passWord != savedPassword)
+                        else if (player1Connected == true && player2Connected == false)
                         {
-                            loggedIntoSystem = false;
+                            loggedIntoSystem = true;
                             msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
                             SendMessageToClient(msg, savedConnectionId);
+                            player2Connected = true;
+                            player2ConnectionID = id;
+                            connectedPlayerIDs.Add(player2ConnectionID);
+                            twoClientsConnected = true;
+                            Debug.Log("Two players are connected");
                         }
+                        break;
+                    }
+
+                    if (passWord != savedPassword)
+                    {
+                        loggedIntoSystem = false;
+                        msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
+                        SendMessageToClient(msg, savedConnectionId);
                     }
                 }
 
             }
+            if (fileNames.Contains(userName) == false)
+            {
+                Debug.Log("That username does not exist");
+            }
+
         }
-        //Now recieving info to create game room
-        else if (accountAuthenticated == true)
+
+
+        void CreateGameRoom(string msg, int id)
         {
-            if (player1Connected == false && player2Connected == false)
-            {
-                player1Connected = true;
-                player1ConnectionID = id;
-                Debug.Log(player1ConnectionID);
-            }
-
-            if (player1Connected == true && player2Connected == false)
-            {
-                player2Connected = true;
-                player2ConnectionID = id;
-                twoClientsConnected = true;
-                Debug.Log(player2ConnectionID);
-            }
-
-            gameRoomName = msg;
+            //Now recieving info to create game room
+            string[] gameRoomInfo = msg.Split(',');
+            gameRoomName = gameRoomInfo[1];
 
             if (gameRoomFileNames.Contains(gameRoomName) == false)
             {
@@ -203,18 +254,6 @@ public class NetworkedServer : MonoBehaviour
                 {
                     sw.WriteLine(gameRoomName);
 
-                    if (player1Connected == true)
-                    { sw.WriteLine("1"); 
-                      sw.WriteLine(savedConnectionId); 
-                    }
-
-                    if (player2Connected == true)
-                    {
-                        sw.WriteLine("true");
-                        sw.WriteLine(savedConnectionId); 
-                    
-                    }
-                
                 }
 
                 using (StreamWriter sw = new StreamWriter("existingGameRooms.txt"))
@@ -237,31 +276,32 @@ public class NetworkedServer : MonoBehaviour
                         string[] savedInfo = line.Split(',');
 
                         //Pull info we need from the client
-                        //savedPassword = savedInfo[1];
-                        //savedConnectionId = int.Parse(savedInfo[2]);
-
+                        gameRoomName = savedInfo[1];
                     }
                 }
-
-
 
             }
 
             if (twoClientsConnected == true)
             {
-                recievedMsgToSendToOtherClient = msg;
-                idOfSender = id;
+                foreach (int playerID in connectedPlayerIDs)
+                {
+                    SendMessageToClient("StartGame", playerID);
+
+                }
             }
         }
     }
 
-    private void SendMessageBetweenClients()
+
+    void SendMessageBetweenClients(string msg, int id)
     {
         if (idOfSender == player1ConnectionID)
-        { SendMessageToClient(recievedMsgToSendToOtherClient, player2ConnectionID); }
+        { SendMessageToClient("Hello from Player 1", player2ConnectionID); }
 
         if (idOfSender == player2ConnectionID)
-        { SendMessageToClient(recievedMsgToSendToOtherClient, player1ConnectionID); }
+        { SendMessageToClient("Hello from Player 2", player1ConnectionID); }
 
     }
+
 }
