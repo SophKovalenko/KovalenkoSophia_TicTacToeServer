@@ -139,6 +139,7 @@ public class NetworkedServer : MonoBehaviour
                 CreateGameRoom(msg, id);
                 break;
             case "LeaveRoom":
+                PlayerLeavingRoom(msg, id);
                 break;
             case "SendMessage":
                 SendMessageBetweenClients(msg, id);
@@ -320,6 +321,17 @@ public class NetworkedServer : MonoBehaviour
                 SendMessageToClient("StartGame", playerID);
             }
         }
+    }
+
+    void PlayerLeavingRoom(string msg, int id)
+    {
+        numPlayerConnectedInThisRoom--;
+
+        if (id == player1ConnectionID)
+        { SendMessageToClient("LeavingRoom", player2ConnectionID); }
+
+        if (id == player2ConnectionID)
+        { SendMessageToClient("LeavingRoom", player1ConnectionID); }
     }
 
 }
