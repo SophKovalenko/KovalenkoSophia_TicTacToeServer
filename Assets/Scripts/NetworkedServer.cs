@@ -302,23 +302,21 @@ public class NetworkedServer : MonoBehaviour
 
     void SendMessageBetweenClients(string msg, int id)
     {
-        if (idOfSender == player1ConnectionID)
-        { SendMessageToClient("Hello from Player 1", player2ConnectionID); }
+        if (id == player1ConnectionID)
+        { SendMessageToClient("Hello", player2ConnectionID); }
 
-        if (idOfSender == player2ConnectionID)
-        { SendMessageToClient("Hello from Player 2", player1ConnectionID); }
+        if (id == player2ConnectionID)
+        { SendMessageToClient("Hello", player1ConnectionID); }
 
     }
 
     void CheckForTwoClients()
     {
-        Debug.Log(numPlayerConnectedInThisRoom);
 
         if (twoClientsConnected == true && numPlayerConnectedInThisRoom == 2)
         {
             foreach (int playerID in connectedPlayerIDs)
             {
-                Debug.Log("sending the start game msg");
                 SendMessageToClient("StartGame", playerID);
             }
         }
