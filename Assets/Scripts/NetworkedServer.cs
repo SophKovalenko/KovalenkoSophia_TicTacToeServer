@@ -120,8 +120,8 @@ public class NetworkedServer : MonoBehaviour
     {
         Debug.Log("msg recieved = " + msg + ".  connection id = " + id);
 
-        string[] msgFromServer = msg.Split(',');
-        msgSignifier = msgFromServer[0];
+        string[] msgFromClient = msg.Split(',');
+        msgSignifier = msgFromClient[0];
 
         switch (msgSignifier)
         {
@@ -182,6 +182,9 @@ public class NetworkedServer : MonoBehaviour
         passWord = accountInfo[2];
         connectionIdOfAccount = id;
 
+        Debug.Log(userName);
+        Debug.Log(passWord);
+
         if (fileNames.Contains(userName) == true)
         {
             string line = "";
@@ -203,7 +206,7 @@ public class NetworkedServer : MonoBehaviour
                         {
                             loggedIntoSystem = true;
                             msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
-                            SendMessageToClient(msg, savedConnectionId);
+                            SendMessageToClient(msg, id);
                             player1Connected = true;
                             player1ConnectionID = id;
                             connectedPlayerIDs.Add(player1ConnectionID);
@@ -213,7 +216,7 @@ public class NetworkedServer : MonoBehaviour
                         {
                             loggedIntoSystem = true;
                             msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
-                            SendMessageToClient(msg, savedConnectionId);
+                            SendMessageToClient(msg, id);
                             player2Connected = true;
                             player2ConnectionID = id;
                             connectedPlayerIDs.Add(player2ConnectionID);
