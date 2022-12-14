@@ -49,6 +49,8 @@ public class NetworkedServer : MonoBehaviour
     //Create a new list for connectedPlayers
     static List<int> connectedPlayerIDs = new List<int>();
 
+    int numPlayerConnectedInThisRoom;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -77,6 +79,8 @@ public class NetworkedServer : MonoBehaviour
                 gameRoomFileNames.Add(line);
             }
         }
+
+        numPlayerConnectedInThisRoom = 0;
     }
 
     // Update is called once per frame
@@ -132,6 +136,7 @@ public class NetworkedServer : MonoBehaviour
                 Login(msg, id);
                 break;
             case "JoinRoom":
+                CreateGameRoom(msg, id);
                 break;
             case "LeaveRoom":
                 break;
@@ -230,7 +235,7 @@ public class NetworkedServer : MonoBehaviour
                     {
                         loggedIntoSystem = false;
                         msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
-                        SendMessageToClient(msg, savedConnectionId);
+                        SendMessageToClient(msg, id);
                     }
                 }
 
@@ -242,58 +247,56 @@ public class NetworkedServer : MonoBehaviour
 
         }
 
+    }
 
-        void CreateGameRoom(string msg, int id)
+    void CreateGameRoom(string msg, int id)
+    {
+        //Now recieving info to create game room
+        string[] gameRoomInfo = msg.Split(',');
+        gameRoomName = gameRoomInfo[1];
+
+        if (gameRoomFileNames.Contains(gameRoomName) == false)
         {
-            //Now recieving info to create game room
-            string[] gameRoomInfo = msg.Split(',');
-            gameRoomName = gameRoomInfo[1];
+          
+            gameRoomFileNames.Add(gameRoomName);
 
-            if (gameRoomFileNames.Contains(gameRoomName) == false)
+            using (StreamWriter sw = new StreamWriter(gameRoomName + ".txt"))
             {
-                gameRoomFileNames.Add(gameRoomName);
-
-                using (StreamWriter sw = new StreamWriter(gameRoomName + ".txt"))
-                {
-                    sw.WriteLine(gameRoomName);
-
-                }
-
-                using (StreamWriter sw = new StreamWriter("existingGameRooms.txt"))
-                {
-                    foreach (var gameRoomFileName in gameRoomFileNames)
-                    {
-                        sw.WriteLine(gameRoomFileName);
-                    }
-                }
-            }
-            else if (fileNames.Contains(gameRoomName) == true)
-            {
-                string line = "";
-
-                using (StreamReader sr = new StreamReader(gameRoomName + ".txt"))
-                {
-                    while ((line = sr.ReadLine()) != null)
-                    {
-                        Console.WriteLine(line);
-                        string[] savedInfo = line.Split(',');
-
-                        //Pull info we need from the client
-                        gameRoomName = savedInfo[1];
-                    }
-                }
+                sw.WriteLine(gameRoomName);
 
             }
 
-            if (twoClientsConnected == true)
+            using (StreamWriter sw = new StreamWriter("existingGameRooms.txt"))
             {
-                foreach (int playerID in connectedPlayerIDs)
+                foreach (var gameRoomFileName in gameRoomFileNames)
                 {
-                    SendMessageToClient("StartGame", playerID);
-
+                    sw.WriteLine(gameRoomFileName);
                 }
             }
+            numPlayerConnectedInThisRoom++;
+
         }
+        else if (fileNames.Contains(gameRoomName) == true)
+        {
+            
+            string line = "";
+
+            using (StreamReader sr = new StreamReader(gameRoomName + ".txt"))
+            {
+                while ((line = sr.ReadLine()) != null)
+                {
+                    Console.WriteLine(line);
+                    string[] savedInfo = line.Split(',');
+
+                    //Pull info we need from the client
+                    gameRoomName = savedInfo[1];
+
+                }
+            }
+
+        }
+        numPlayerConnectedInThisRoom++;
+        CheckForTwoClients();
     }
 
 
@@ -305,6 +308,20 @@ public class NetworkedServer : MonoBehaviour
         if (idOfSender == player2ConnectionID)
         { SendMessageToClient("Hello from Player 2", player1ConnectionID); }
 
+    }
+
+    void CheckForTwoClients()
+    {
+        Debug.Log(numPlayerConnectedInThisRoom);
+
+        if (twoClientsConnected == true && numPlayerConnectedInThisRoom == 2)
+        {
+            foreach (int playerID in connectedPlayerIDs)
+            {
+                Debug.Log("sending the start game msg");
+                SendMessageToClient("StartGame", playerID);
+            }
+        }
     }
 
 }
