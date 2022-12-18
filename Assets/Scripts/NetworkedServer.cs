@@ -32,12 +32,22 @@ public class NetworkedServer : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        NetworkTransport.Init();
-        ConnectionConfig config = new ConnectionConfig();
-        reliableChannelID = config.AddChannel(QosType.Reliable);
-        unreliableChannelID = config.AddChannel(QosType.Unreliable);
-        HostTopology topology = new HostTopology(config, maxConnections);
-        hostID = NetworkTransport.AddHost(topology, socketPort, null);
+        if (NetworkedServerProcessing.GetNetworkedServer() == null)
+        {
+            NetworkedServerProcessing.SetNetworkedServer(this);
+
+            NetworkTransport.Init();
+            ConnectionConfig config = new ConnectionConfig();
+            reliableChannelID = config.AddChannel(QosType.Reliable);
+            unreliableChannelID = config.AddChannel(QosType.Unreliable);
+            HostTopology topology = new HostTopology(config, maxConnections);
+            hostID = NetworkTransport.AddHost(topology, socketPort, null);
+        }
+        else
+        {
+            Debug.Log("Singleton-ish architecture violation detected, investigate where NetworkedServer.cs Start() is being called.  Are you creating a second instance of the NetworkedServer game object or has the NetworkedServer.cs been attached to more than one game object?");
+            Destroy(this.gameObject);
+        }
 
         string line = "";
 
@@ -52,7 +62,7 @@ public class NetworkedServer : MonoBehaviour
         numPlayerConnectedInThisRoom = 0;
     }
 
-    // Update is called once per frame
+
     void Update()
     {
         int recHostID;
@@ -70,18 +80,18 @@ public class NetworkedServer : MonoBehaviour
             case NetworkEventType.Nothing:
                 break;
             case NetworkEventType.ConnectEvent:
-                Debug.Log("Connection, " + recConnectionID);
+                NetworkedServerProcessing.ConnectionEvent(recConnectionID);
                 break;
             case NetworkEventType.DataEvent:
                 string msg = Encoding.Unicode.GetString(recBuffer, 0, dataSize);
-                NetworkServerProcessing.ReceivedMessageFromClient(msg, recConnectionID);
+                NetworkedServerProcessing.ReceivedMessageFromClient(msg, recConnectionID);
                 break;
             case NetworkEventType.DisconnectEvent:
-                Debug.Log("Disconnection, " + recConnectionID);
+                NetworkedServerProcessing.DisconnectionEvent(recConnectionID);
                 break;
         }
-    }
 
+    }
     public void SendMessageToClient(string msg, int id)
     {
         byte error = 0;

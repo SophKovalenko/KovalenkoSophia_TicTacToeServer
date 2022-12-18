@@ -6,8 +6,8 @@ using UnityEngine;
 
 public class LoginManager : MonoBehaviour
 {
-    string userName;
-    string passWord;
+    public string userName;
+    public string passWord;
     string savedPassword;
     int savedConnectionId;
     int connectionIdOfAccount;
@@ -44,17 +44,8 @@ public class LoginManager : MonoBehaviour
         }
     }
 
-    private void Login(string msg, int id)
+    public void Login(int id)
     {
-        //Now recieving info to autenticate account
-        string[] accountInfo = msg.Split(',');
-        userName = accountInfo[1];
-        passWord = accountInfo[2];
-        connectionIdOfAccount = id;
-
-        Debug.Log(userName);
-        Debug.Log(passWord);
-
         if (fileNames.Contains(userName) == true)
         {
             string line = "";
@@ -74,9 +65,7 @@ public class LoginManager : MonoBehaviour
                     {
                         if (player1Connected == false && player2Connected == false)
                         {
-                            loggedIntoSystem = true;
-                            msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
-                            NetworkServerProcessing.SendMessageToClient(msg, id);
+                            NetworkedServerProcessing.SendMessageToClient(ServerToClientSignifiers.loginSuccessful + "," + userName, id);
                             player1Connected = true;
                             player1ConnectionID = id;
                             connectedPlayerIDs.Add(player1ConnectionID);
@@ -85,8 +74,7 @@ public class LoginManager : MonoBehaviour
                         else if (player1Connected == true && player2Connected == false)
                         {
                             loggedIntoSystem = true;
-                            msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
-                            NetworkServerProcessing.SendMessageToClient(msg, id);
+                            NetworkedServerProcessing.SendMessageToClient(ServerToClientSignifiers.loginSuccessful + "," + userName, id);
                             player2Connected = true;
                             player2ConnectionID = id;
                             connectedPlayerIDs.Add(player2ConnectionID);
@@ -98,15 +86,15 @@ public class LoginManager : MonoBehaviour
 
                     if (passWord != savedPassword)
                     {
-                        loggedIntoSystem = false;
-                        msg = loggedIntoSystem + "," + userName + "," + savedConnectionId + ",";
-                        NetworkServerProcessing.SendMessageToClient(msg, id);
+                       loggedIntoSystem = false;
+                       NetworkedServerProcessing.SendMessageToClient(ServerToClientSignifiers.wrongPassword + "," + userName, id);
                     }
                 }
 
             }
             if (fileNames.Contains(userName) == false)
             {
+                NetworkedServerProcessing.SendMessageToClient(ServerToClientSignifiers.wrongUsername + "," + userName, id);
                 Debug.Log("That username does not exist");
             }
 
@@ -114,14 +102,8 @@ public class LoginManager : MonoBehaviour
 
     }
 
-    private void CreateNewAccount(string msg, int id)
+    public void CreateNewAccount(int id)
     {
-        //Now recieving info to autenticate account
-        string[] accountInfo = msg.Split(',');
-        userName = accountInfo[1];
-        passWord = accountInfo[2];
-        connectionIdOfAccount = id;
-
         if (fileNames.Contains(userName) == false)
         {
             fileNames.Add(userName);

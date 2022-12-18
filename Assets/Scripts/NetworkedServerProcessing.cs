@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class NetworkServerProcessing : MonoBehaviour
+public class NetworkedServerProcessing : MonoBehaviour
 {
     #region Send and Receive Data Functions
     static public void ReceivedMessageFromClient(string msg, int clientConnectionID)
@@ -12,10 +12,17 @@ public class NetworkServerProcessing : MonoBehaviour
         string[] csv = msg.Split(',');
         int signifier = int.Parse(csv[0]);
 
-        if (signifier == ClientToServerSignifiers.balloonClicked)
+        if (signifier == ClientToServerSignifiers.verifyLogin)
         {
-            int refID = int.Parse(csv[1]);
-            // gameLogic.BalloonWasClicked(refID);
+            FindObjectOfType<LoginManager>().userName = csv[1];
+            FindObjectOfType<LoginManager>().passWord = csv[2];
+            FindObjectOfType<LoginManager>().Login(clientConnectionID);
+        }
+        if (signifier == ClientToServerSignifiers.createAccount)
+        {
+            FindObjectOfType<LoginManager>().userName = csv[1];
+            FindObjectOfType<LoginManager>().passWord = csv[2];
+            FindObjectOfType<LoginManager>().CreateNewAccount(clientConnectionID);
         }
         else if (signifier == ClientToServerSignifiers.playerHasLeftMatch)
         {
@@ -69,14 +76,18 @@ public class NetworkServerProcessing : MonoBehaviour
 #region Protocol Signifiers
 static public class ClientToServerSignifiers
 {
-    public const int balloonClicked = 1;
-    public const int playerHasLeftMatch = 2;
+    public const int verifyLogin = 1;
+    public const int createAccount = 2;
+    public const int playerHasLeftMatch = 3;
 }
 
 static public class ServerToClientSignifiers
 {
-    public const int spawnNewBalloon = 1;
-    public const int balloonWasPopped = 2;
+    public const int loginSuccessful = 1;
+    public const int wrongPassword = 2;
+    public const int wrongUsername = 3;
+    public const int startGame = 4;
+    public const int helloFromOtherPlayer = 5;
 }
 
 #endregion
