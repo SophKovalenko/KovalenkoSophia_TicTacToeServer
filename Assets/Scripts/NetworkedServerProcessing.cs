@@ -24,6 +24,23 @@ public class NetworkedServerProcessing : MonoBehaviour
             FindObjectOfType<LoginManager>().passWord = csv[2];
             FindObjectOfType<LoginManager>().CreateNewAccount(clientConnectionID);
         }
+        if (signifier == ClientToServerSignifiers.joinRoom)
+        {  
+            FindObjectOfType<GameRoomManager>().gameRoomName = csv[1];
+            FindObjectOfType<GameRoomManager>().CreateGameRoom(clientConnectionID);
+        }
+        if (signifier == ClientToServerSignifiers.leaveRoom)
+        {
+
+        }
+        if (signifier == ClientToServerSignifiers.sendMsg)
+        {
+            if (clientConnectionID == FindObjectOfType<LoginManager>().player1ConnectionID)
+            { SendMessageToClient("Hello From Opponent", FindObjectOfType<LoginManager>().player2ConnectionID); }
+
+            if (clientConnectionID == FindObjectOfType<LoginManager>().player2ConnectionID)
+            { SendMessageToClient("Hello From Opponent", FindObjectOfType<LoginManager>().player1ConnectionID); }
+        }
         else if (signifier == ClientToServerSignifiers.playerHasLeftMatch)
         {
             int refID = int.Parse(csv[1]);
@@ -78,7 +95,10 @@ static public class ClientToServerSignifiers
 {
     public const int verifyLogin = 1;
     public const int createAccount = 2;
-    public const int playerHasLeftMatch = 3;
+    public const int joinRoom = 3;
+    public const int leaveRoom = 4;
+    public const int sendMsg = 5;
+    public const int playerHasLeftMatch = 6;
 }
 
 static public class ServerToClientSignifiers
@@ -93,30 +113,9 @@ static public class ServerToClientSignifiers
 #endregion
 
 
-//private void ProcessRecievedMsg(string msg, int id)
-//{
-//    Debug.Log("msg recieved = " + msg + ".  connection id = " + id);
 
-//    string[] msgFromClient = msg.Split(',');
-//    msgSignifier = msgFromClient[0];
 
-//    switch (msgSignifier)
-//    {
-//        case "CreateAccount":
-//            CreateNewAccount(msg, id);
-//            break;
-//        case "Login":
-//            Login(msg, id);
-//            break;
-//        case "JoinRoom":
-//            CreateGameRoom(msg, id);
-//            break;
 //        case "LeaveRoom":
 //            PlayerLeavingRoom(msg, id);
 //            break;
-//        case "SendMessage":
-//            SendMessageBetweenClients(msg, id);
-//            break;
-//    }
 
-//}
