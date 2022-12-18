@@ -13,6 +13,8 @@ public class GameRoomManager : MonoBehaviour
     int idOfSender;
     int idOfReciever;
 
+    LoginManager loginManager;
+
     //Used for storing the saved game room info 
     public static string gameRoomNames = "";
 
@@ -34,6 +36,7 @@ public class GameRoomManager : MonoBehaviour
         }
 
         numPlayerConnectedInThisRoom = 0;
+        loginManager = FindObjectOfType<LoginManager>();
     }
 
     public void CreateGameRoom(int id)
@@ -87,18 +90,19 @@ public class GameRoomManager : MonoBehaviour
             foreach (int playerID in LoginManager.connectedPlayerIDs)
             {
                 NetworkedServerProcessing.SendMessageToClient(ServerToClientSignifiers.startGame + ",", playerID);
+                Debug.Log(playerID);
             }
         }
     }
 
-    //void PlayerLeavingRoom(string msg, int id)
-    //{
-    //    numPlayerConnectedInThisRoom--;
+    public void PlayerLeavingRoom(int id)
+    {
+        numPlayerConnectedInThisRoom--;
 
-    //    if (id == player1ConnectionID)
-    //    { SendMessageToClient("LeavingRoom", player2ConnectionID); }
+        if (id == loginManager.player1ConnectionID)
+        { NetworkedServerProcessing.SendMessageToClient("LeavingRoom", loginManager.player2ConnectionID); }
 
-    //    if (id == player2ConnectionID)
-    //    { SendMessageToClient("LeavingRoom", player1ConnectionID); }
-    //}
+        if (id == loginManager.player2ConnectionID)
+        { NetworkedServerProcessing.SendMessageToClient("LeavingRoom", loginManager.player1ConnectionID); }
+    }
 }

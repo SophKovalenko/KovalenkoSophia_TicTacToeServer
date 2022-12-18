@@ -28,10 +28,11 @@ public class NetworkedServerProcessing : MonoBehaviour
         {  
             FindObjectOfType<GameRoomManager>().gameRoomName = csv[1];
             FindObjectOfType<GameRoomManager>().CreateGameRoom(clientConnectionID);
+            gameLogic.AssignSides(clientConnectionID);
         }
         if (signifier == ClientToServerSignifiers.leaveRoom)
         {
-
+            FindObjectOfType<GameRoomManager>().PlayerLeavingRoom(clientConnectionID);
         }
         if (signifier == ClientToServerSignifiers.sendMsg)
         {
@@ -40,6 +41,11 @@ public class NetworkedServerProcessing : MonoBehaviour
 
             if (clientConnectionID == FindObjectOfType<LoginManager>().player2ConnectionID)
             { SendMessageToClient("Hello From Opponent", FindObjectOfType<LoginManager>().player1ConnectionID); }
+        }
+        if (signifier == ClientToServerSignifiers.turnTaken)
+        {
+            gameLogic.turnsTaken++;
+            Debug.Log(gameLogic.turnsTaken);
         }
         else if (signifier == ClientToServerSignifiers.playerHasLeftMatch)
         {
@@ -99,23 +105,26 @@ static public class ClientToServerSignifiers
     public const int leaveRoom = 4;
     public const int sendMsg = 5;
     public const int playerHasLeftMatch = 6;
+    //During Game
+    public const int turnTaken = 7;
 }
 
 static public class ServerToClientSignifiers
 {
+    //Login
     public const int loginSuccessful = 1;
     public const int wrongPassword = 2;
     public const int wrongUsername = 3;
+
+    //Gamr Room
     public const int startGame = 4;
     public const int helloFromOtherPlayer = 5;
+
+    //During Game
+    public const int sideAssignment = 6;
+    public const int changeTurn = 7;
+    public const int gameDraw = 8;
 }
 
 #endregion
-
-
-
-
-//        case "LeaveRoom":
-//            PlayerLeavingRoom(msg, id);
-//            break;
 
