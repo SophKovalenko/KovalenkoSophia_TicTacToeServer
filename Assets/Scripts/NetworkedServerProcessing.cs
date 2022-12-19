@@ -44,7 +44,15 @@ public class NetworkedServerProcessing : MonoBehaviour
         }
         if (signifier == ClientToServerSignifiers.turnTaken)
         {
+            string buttonPressedByPlayer = csv[1];
+
+            foreach (int connectedClient in gameLogic.connectedClientIds)
+            {
+                NetworkedServerProcessing.SendMessageToClient(ServerToClientSignifiers.buttonPressed + ",", connectedClient);
+            }
+
             gameLogic.turnsTaken++;
+            gameLogic.ChangeTurn();
             Debug.Log(gameLogic.turnsTaken);
         }
         else if (signifier == ClientToServerSignifiers.playerHasLeftMatch)
@@ -52,7 +60,6 @@ public class NetworkedServerProcessing : MonoBehaviour
             int refID = int.Parse(csv[1]);
             DisconnectionEvent(refID);
         }
-
     }
     static public void SendMessageToClient(string msg, int clientConnectionID)
     {
@@ -66,12 +73,12 @@ public class NetworkedServerProcessing : MonoBehaviour
     static public void ConnectionEvent(int clientConnectionID)
     {
         Debug.Log("New Connection, ID == " + clientConnectionID);
-        // gameLogic.AddConnectedClient(clientConnectionID);
+        gameLogic.AddConnectedClient(clientConnectionID);
     }
     static public void DisconnectionEvent(int clientConnectionID)
     {
         Debug.Log("New Disconnection, ID == " + clientConnectionID);
-        // gameLogic.RemoveConnectedClient(clientConnectionID);
+        gameLogic.RemoveConnectedClient(clientConnectionID);
     }
 
     #endregion
@@ -122,8 +129,10 @@ static public class ServerToClientSignifiers
 
     //During Game
     public const int sideAssignment = 6;
-    public const int changeTurn = 7;
-    public const int gameDraw = 8;
+    public const int buttonPressed = 7;
+    public const int changeTurn = 8;
+    public const int gameDraw = 9;
+    public const int gameOver = 10;
 }
 
 #endregion
